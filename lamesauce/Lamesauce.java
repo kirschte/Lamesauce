@@ -26,7 +26,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  */
 public class Lamesauce extends TelegramLongPollingBot {
 
-    private final String BOT_TOKEN = "363651570:AAEOmKt_N6tbokuPWvsqkxIwdyK5edBtk_0";
+    private final String BOT_TOKEN = "";
     private final String BOT_USERNAME = "Lamesauce";
 
     User user;
@@ -200,7 +200,13 @@ public class Lamesauce extends TelegramLongPollingBot {
      * @return result
      */
     private static boolean isNumeric(String number) {
-        return number.matches("\\d+");
+        try {
+            
+            Integer i = Integer.parseInt(number);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
     }
     
     private static void log(long userID, String text ){
