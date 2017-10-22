@@ -1,128 +1,131 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2017 paul
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package lamesauce;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.telegram.telegrambots.*;
-import org.telegram.telegrambots.TelegramBotsApi;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lamesauce.message.SendObserver;
+import lamesauce.message.SendTelegramMessage;
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 /**
  *
  * @author paul
  */
-public class Lamesauce extends TelegramLongPollingBot {
+public class Lamesauce extends SendTelegramMessage {
 
-    private final String BOT_TOKEN = "";
+    private final String BOT_TOKEN = "LamesauceAPI";
     private final String BOT_USERNAME = "Lamesauce";
 
-    User user;
+    public final List<Long> SQUAD
+            = new ArrayList<>(Arrays.asList(-135634788L)); //the telegram Chat ID
+    private List<SendObserver> so; //same lenth as SQUAD
 
-    public Lamesauce() throws IOException {
-        this.user = new User();
+    private List<User> user;
+
+    public Lamesauce() {
+        this.so = SQUAD.stream()
+                .map(SendObserver::new)
+                .collect(Collectors.toList());
+        this.user = LoadStoreArchitecture.loadFromFile();
+
     }
-    
-    /**
-     * Gets bot Token
-     *
-     * @return bots token
-     */
+
     @Override
     public String getBotToken() {
         return BOT_TOKEN;
     }
 
     /**
-     * sends a message
+     * where the real shit happens
      *
-     * @param chat chatid, ie where to send
-     * @param text what to send
+     * @param update
      */
-    private void sendMessage(long chat, String text) {
-        SendMessage message = new SendMessage()
-                .setChatId(chat)
-                .setText(text);
-        try {
-            sendMessage(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+    @Override
+    public void onUpdateReceived(Update update) {
+        //real shit happes here
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            //extract data
+            long userID = update.getMessage().getFrom().getId();
+
+            String username = update.getMessage().getFrom().getUserName();
+            String userFirstName = update.getMessage().getFrom().getFirstName();
+            String messageRecieved = update.getMessage().getText();
+            long chat = update.getMessage().getChatId();
+            Optional<SendObserver> chatFirst = so.stream()
+                    .filter(s -> s.getChat() == chat)
+                    .findFirst();
+            if (!chatFirst.isPresent()) {
+                so.add(new SendObserver(chat, false));
+            }
+
+            if (!(messageRecieved.trim().isEmpty())) {
+                String[] command = messageRecieved.split(" ", 2);
+                //houston, we have a message
+
+                switch (command[0]) {
+                    case "!add":
+                        addQuote(chat, username, userFirstName, command[1]);
+                        break;
+
+                    case "!auth":
+                        authUser(chat, username, userFirstName, command[1]);
+                        break;
+
+                    case "!areyoualive":
+                        sendMessage(chat, "Thank you for asking " + userFirstName
+                                + ". Yes, I'm alive and well.");
+
+                        break;
+                    case "!whoisadmin":
+                        listAdmins(chat);
+                        break;
+
+                    case "!deauth":
+                        deauthUser(chat, username, command[1]);
+                        break;
+                    case "!help":
+                        helpDialog(chat);
+                        break;
+                    case "!bringbeer":
+                        if (command.length == 1) {
+                            bringBeer(chat, 1);
+                        } else if (isNumeric(command[1].trim())
+                                && ((Integer.parseInt(command[1].trim())) > 0)
+                                && ((Integer.parseInt(command[1].trim())) < 4096)) {
+                            bringBeer(chat, Integer.parseInt(command[1].trim()));
+                        } else if (!isNumeric(command[1].trim())
+                                || ((Integer.parseInt(command[1].trim())) <= 0)
+                                || ((Integer.parseInt(command[1].trim())) > 4096)) {
+                            sendMessage(chat, "YOU DUCKFACE.");
+                        }
+                }
+            }
+
         }
     }
 
-    /**
-     * adds a quote to the hall of shame
-     *
-     * @param chat where to send notification
-     * @param user username to check for auth
-     * @param userFirstName users first name for the reply
-     * @param quote text for the site (already formated)
-     */
-    private void addQuote(long chat, String user, String userFirstName, String quote) {
-        if (this.user.isAuthed(user)) {
-            sendMessage(chat, "Adding message to the hall of shame >:)");
-
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM");
-            Date date = new Date();
-
-            try {
-                Process p = new ProcessBuilder("./addBot.sh", ""
-                        + dateFormat.format(date).toString() + ":"
-                        + quote + "").start();
-
-            } catch (IOException ex) {
-                Logger.getLogger(Lamesauce.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            sendMessage(chat, "I'm sorry " + userFirstName
-                    + ", I'm afraid I can't let you do that."
-                    + " However, I've added it to the "
-                    + "list for future approval.");
-
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM");
-            Date date = new Date();
-
-            try {
-                Process p = new ProcessBuilder("./addBot.sh", "#"
-                        + dateFormat.format(date).toString() + ":"
-                        + quote + "").start();
-
-            } catch (IOException ex) {
-                Logger.getLogger(Lamesauce.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
-    }
-
-    /**
-     * authorizes a username for changes
-     *
-     * @param chat for response
-     * @param user username which is authorized
-     * @param userFirstName for reply purposes
-     * @param args the supplied username
-     */
-    private void authUser(long chat, String user, String userFirstName, String args) {
-        if (this.user.isAuthed(user)) {
-            this.user.addAuthedUser(args);
-            sendMessage(chat, "User " + args
-                    + " has been authorized for changes!");
-
-        } else {
-            sendMessage(chat, "I'm sorry " + userFirstName
-                    + ", I'm afraid I can't let you do that");
-
-        }
+    @Override
+    public String getBotUsername() {
+        return BOT_USERNAME;
     }
 
     /**
@@ -139,19 +142,6 @@ public class Lamesauce extends TelegramLongPollingBot {
         }
         sendMessage(chat, "The following users are authorized: \n" + sb.toString());
 
-    }
-
-    private void deauthUser(long chat, String user, String args) {
-        if (this.user.isAuthed(user)) {
-            if (this.user.removeAuthedUser(args)) {
-                sendMessage(chat, "User " + args + " has been deauthorized!");
-            } else {
-                sendMessage(chat, "User is not authorized!");
-            }
-
-        } else {
-            sendMessage(chat, "I really hope that you're not trying to deauthorize someone when you're not allowed to!");
-        }
     }
 
     /**
@@ -192,8 +182,10 @@ public class Lamesauce extends TelegramLongPollingBot {
 
         sendMessage(chat, sb.toString());
     }
+
     /**
      * checks if a number is numeric
+     *
      * @param number
      * @return result
      */
@@ -201,106 +193,6 @@ public class Lamesauce extends TelegramLongPollingBot {
         return number.matches("\\d+");
     }
     
-    private static void log(long userID, String text ){
-    
-        DateFormat dateFormat = new SimpleDateFormat("kk:mm");
-            Date date = new Date();
-            
-        //format: [00:02] <Jenny> Hello world
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        sb.append(dateFormat.format(date));
-        sb.append("]");
-        sb.append(" <");
-        sb.append(userID);
-        sb.append("> ");
-        sb.append(text);
-        System.out.println(sb.toString());
-    }
-    
-    /**
-     * where the real shit happens
-     *
-     * @param update
-     */
-    @Override
-    public void onUpdateReceived(Update update) {
-        //real shit happes here
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            //extract data
-            long userID = update.getMessage().getFrom().getId();
-            
-            String username = update.getMessage().getFrom().getUserName();
-            String userFirstName = update.getMessage().getFrom().getFirstName();
-            String messageRecieved = update.getMessage().getText();
-            long chat = update.getMessage().getChatId();
-            if (chat == -135634788){
-                log(userID, messageRecieved);
-            }
-            
-            
-            
-            if (!(messageRecieved.trim().isEmpty())) {
-                String[] command = messageRecieved.split(" ", 2);
-                //houston, we have a message
-
-                switch (command[0]) {
-                    case "!add":
-                        addQuote(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!auth":
-                        authUser(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!areyoualive":
-                        sendMessage(chat, "Thank you for asking " + userFirstName
-                                + ". Yes, I'm alive and well.");
-
-                        break;
-                    case "!whoisadmin":
-                        listAdmins(chat);
-                        break;
-
-                    case "!deauth":
-                        deauthUser(chat, username, command[1]);
-                        break;
-                    case "!help":
-                        helpDialog(chat);
-                        break;
-                    case "!bringbeer":
-                        if (command.length == 1) {
-                            bringBeer(chat, 1);
-                        } else if (isNumeric(command[1].trim()) 
-                                && ((Integer.parseInt(command[1].trim())) > 0) 
-                                && ((Integer.parseInt(command[1].trim())) < 4096)) {
-                            bringBeer(chat, Integer.parseInt(command[1].trim()));
-                        } else if (!isNumeric(command[1].trim()) 
-                                || ((Integer.parseInt(command[1].trim())) <= 0) 
-                                || ((Integer.parseInt(command[1].trim())) > 4096)) {
-                            sendMessage(chat, "YOU DUCKFACE.");
-                        }
-
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-
-        }
-    }
-
-    /**
-     * Gets bot Username
-     *
-     * @return bots Username
-     */
-    @Override
-    public String getBotUsername() {
-        return BOT_USERNAME;
-    }
-
     /**
      * @param args the command line arguments
      * @throws java.io.IOException

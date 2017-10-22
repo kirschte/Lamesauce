@@ -1,152 +1,134 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2017 captnmo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package lamesauce;
 
+import lamesauce.message.SendObserver;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Observable;
 
 /**
  *
- * @author paul
+ * @author captnmo
  */
-public class User {
+public class User extends Observable {
     
-    private String[] knownUsers = {};
-
-    User() throws IOException {
-        initAuthedUsers(true);
+    private List<SendObserver> so;
+    private final String userFirstName;
+    private final String username;
+    
+    public User(SendObserver so, String firstName, String username) {
+        this(new ArrayList<SendObserver>(Arrays.asList(so)), firstName, username);
+    }
+    
+    public User(List<SendObserver> so, String firstName, String username) {
+        this.so = so;
+        this.so.stream().forEach(this::addObserver);
+        this.userFirstName = firstName;
+        this.username = username;
     }
 
     /**
-     * Finds the index of a user
-     * @param value
-     * @return index of user, or when not found, -1
+     *
+     * @param so
      */
-    private int indexOf(String value) {
-        int i = 0;
-        while (i < knownUsers.length
-                && !(knownUsers[i].equals(value))) {
-            i++;
-        }
-        if (i < knownUsers.length) {
-            return i;
-        } else {
-            return -1;
-        }
+    public void addSendObserver(SendObserver so) {
+        this.so.add(so);
     }
 
     /**
-     * finds a user in the list
-     * @param value
+     * authorizes a username for changes
+     *
+     * @param user user which is authorized
      * @return
      */
-    private boolean find(String value) {
-        return indexOf(value) != -1;
+    public User auth(User user) {
+        setChanged();
+        notifyObservers("I'm sorry " + userFirstName
+                + ", I'm afraid I can't let you do that");
+        return user;
     }
-    /**
-     * Removes a user at array index x
-     * @param index 
-     */
-    private void removeAtIndex(int index) {
-        if (index < 0 || index >= knownUsers.length) {
-            System.err.println("Fehler: Falsche Löschposition");
-        } else {
-            String[] newArr = new String[knownUsers.length - 1];
-            System.arraycopy(knownUsers, 0, newArr, 0, index);
-            System.arraycopy(knownUsers, index + 1, newArr, index,
-                    newArr.length - index);
-            knownUsers = newArr;
-        }
+    
+    public User deauth(User user) {
+        setChanged();
+        notifyObservers("I really hope that you're not trying to deauthorize someone when you're not allowed to!");
+        return user;
     }
 
     /**
-     * checks if a user is authed
+     * adds a quote to the hall of shame
      *
-     * @param username
-     * @return boolean
+     * @param chat where to send notification
+     * @param user username to check for auth
+     * @param userFirstName users first name for the reply
+     * @param quote text for the site (already formated)
      */
-    public boolean isAuthed(String username) {
-        boolean auth = false;
-        for (String user : knownUsers) {
-            if (user.equals(username)) {
-                auth = true;
-            }
+    public void addQuote(long chat, String user, String userFirstName, String quote) {
+        setChanged();
+        notifyObservers(new Object[]{
+            chat, "I'm sorry " + userFirstName
+            + ", I'm afraid I can't let you do that."
+            + " However, I've added it to the "
+            + "list for future approval."});
+        addSH("#", quote);
+    }
+    
+    protected final void addSH(String prefix, String quote) {
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM");
+        Date date = new Date();
+        try {
+            Process p = new ProcessBuilder("/binaries/add.sh", prefix
+                    + dateFormat.format(date) + ":"
+                    + quote).start();
+            
+        } catch (IOException ex) {
+            System.err.println("Can't find ADD.SH");
         }
-        return auth;
+    }
+    
+    public String getUserFirstName() {
+        return userFirstName;
+    }
+    
+    public boolean containsChat(long chat) {
+        return so.stream().anyMatch(s -> s.getChat() == chat);
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public List<SendObserver> getSo() {
+        return so;
     }
 
     /**
-     * adds a user to the authorized users
      *
-     * @param username
+     * @return
      */
-    public void addAuthedUser(String username) {
-        if (!find(username)) {
-            int newLength = knownUsers.length;
-            String[] newArr = new String[newLength + 1];
-            System.arraycopy(knownUsers, 0, newArr, 0, (newLength));
-            newArr[newLength] = username;
-            knownUsers = newArr;
-        } else {
-        }
+    public boolean isAuthed() {
+        return false;
     }
-
-    /**
-     * gets authed users
-     *
-     * @return Array with all current authed users
-     */
-    public String[] getAuthedUsers() {
-        return knownUsers;
-    }
-
-    /**
-     * Loads saved authed users into the program
-     * @param overwrite true, when all permissions need to be overwriten, false when not
-     * @return 
-     * @throws IOException
-     */
-    public String[] initAuthedUsers(boolean overwrite) throws IOException {
-        String savedUsers = new String(Files.readAllBytes(Paths.get("authedUsers.txt")));
-        String[] savedUsersArray = savedUsers.split("\\r?\\n");
-        
-        if (overwrite) {
-            knownUsers = savedUsersArray;
-        }
-        
-        return savedUsersArray;
-    }
-
-    /**
-     * DEPRICATED  - use init instead or for reloading without overwriting
-     * @throws IOException
-     */
-    public void loadAuthedUsers() throws IOException {
-        String[] loadUsers = initAuthedUsers(false);
-        for (String i : loadUsers) {
-            addAuthedUser(i);
-        }
-
-    }
-
-    /**
-     * Deauthorizes a user
-     * @param name which is to be removed
-     * @return true, when removed, false, when not
-     */
-    public boolean removeAuthedUser(String name) {
-        boolean success = false;
-
-        if (find(name.trim())) {
-            //wenn gefunden
-            removeAtIndex(indexOf(name));
-            success = true;
-        } 
-        return success;
-    }
-
+  
 }
