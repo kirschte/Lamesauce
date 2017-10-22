@@ -200,13 +200,7 @@ public class Lamesauce extends TelegramLongPollingBot {
      * @return result
      */
     private static boolean isNumeric(String number) {
-        try {
-            
-            Integer i = Integer.parseInt(number);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
+        return number.matches("\\d+");
     }
     
     private static void log(long userID, String text ){
