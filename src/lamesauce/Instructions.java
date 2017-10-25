@@ -16,30 +16,46 @@
  */
 package lamesauce;
 
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 /**
  *
  * @author captnmo
  */
 public enum Instructions {
-    AUTH(1,"!auth"),
-    DEAUTH(1, "!deauth");
-    
-    private int countOfParameters;
+    AUTH("!auth"),
+    ALIVE("!areyoualive"),
+    ADD("!add"),
+    ADMIN("!whoisadmin"),
+    HELP("!help"),
+    BEER("!bringbeer"),
+    DEAUTH("!deauth");
+
     private String identifier;
     
-    private Instructions(int countOfParameters, String identifier) {
-        this.countOfParameters = countOfParameters;
+    private Instructions(String identifier) {
         this.identifier = identifier;
     }
 
-    public int getCountOfParameters() {
-        return countOfParameters;
-    }
 
     public String getIdentifier() {
         return identifier;
     }
     
-    
+    public static List<String> getIdentifiers() {
+        return Arrays.stream(Instructions.values())
+                .map(Instructions::getIdentifier)
+                .collect( Collectors.toList());
+    }
+
+    public static Optional<Instructions> containsIdent(String identifier) {
+        return Arrays.stream(Instructions.values())
+                .filter(i -> i.getIdentifier().equals(identifier))
+                .findFirst();
+    }
     
 }

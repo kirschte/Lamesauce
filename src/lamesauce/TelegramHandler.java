@@ -18,11 +18,9 @@ package lamesauce;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Observable;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import lamesauce.message.*;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
@@ -32,7 +30,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 /**
- *
  * @author captnmo
  */
 public class TelegramHandler extends TelegramLongPollingBot {
@@ -40,11 +37,11 @@ public class TelegramHandler extends TelegramLongPollingBot {
     private final String BOT_TOKEN = "LamesauceAPI";
     private final String BOT_USERNAME = "Lamesauce";
 
-    public final List<Long> SQUAD
-            = new ArrayList<>(Arrays.asList(-135634788L)); //the telegram Chat ID
+    private final List<Long> SQUAD
+            = new ArrayList<>(Collections.singletonList(-135634788L)); //the telegram Chat ID
     private Helper hlp;
 
-    public TelegramHandler(Lamesauce lm) {
+    TelegramHandler(Lamesauce lm) {
         this.hlp = new Helper(lm);
 
         ApiContextInitializer.init();
@@ -70,7 +67,7 @@ public class TelegramHandler extends TelegramLongPollingBot {
     /**
      * where the real shit happens
      *
-     * @param update
+     * @param update UpdateInformation from TelegramAPI
      */
     @Override
     public void onUpdateReceived(Update update) {
@@ -90,53 +87,26 @@ public class TelegramHandler extends TelegramLongPollingBot {
             if (!(messageRecieved.trim().isEmpty())) {
                 identify(chat, username, userFirstName, messageRecieved);
                 //houston, we have a message
-
-                switch (command[0]) {
-                    case "!add":
-                        addQuote(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!auth":
-                        authUser(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!areyoualive":
-                        sendMessage(chat, "Thank you for asking " + userFirstName
-                                + ". Yes, I'm alive and well.");
-
-                        break;
-                    case "!whoisadmin":
-                        listAdmins(chat);
-                        break;
-
-                    case "!deauth":
-                        deauthUser(chat, username, command[1]);
-                        break;
-                    case "!help":
-                        helpDialog(chat);
-                        break;
-                    case "!bringbeer":
-                        if (command.length == 1) {
-                            bringBeer(chat, 1);
-                        } else if (isNumeric(command[1].trim())
-                                && ((Integer.parseInt(command[1].trim())) > 0)
-                                && ((Integer.parseInt(command[1].trim())) < 4096)) {
-                            bringBeer(chat, Integer.parseInt(command[1].trim()));
-                        } else if (!isNumeric(command[1].trim())
-                                || ((Integer.parseInt(command[1].trim())) <= 0)
-                                || ((Integer.parseInt(command[1].trim())) > 4096)) {
-                            sendMessage(chat, "YOU DUCKFACE.");
-                        }
-                }
             }
 
         }
     }
-    
+
     private void identify(long chat, String username, String userFirstName, String message) {
         String[] words = message.trim().split("\\s+"); //any whitespace character
-        Arrays.asList(words).stream()
-                ;
+        List<String> droppedWords = Arrays.stream(words)
+                .dropWhile(s -> Instructions.getIdentifiers().stream().anyMatch(s::contains))
+                .collect(Collectors.toList());
+        Optional<Instructions> inst = Instructions.containsIdent(droppedWords.remove(0));
+        //else: a non-valid identifier --> nothing should happen
+        inst.ifPresent(instructions -> hlp.notify(
+                new TelegramMessage(
+                        chat,
+                        Arrays.toString(droppedWords.toArray(new String[droppedWords.size()])),
+                        username,
+                        userFirstName,
+                        instructions)
+        ));
     }
 
     @Override
@@ -147,10 +117,9 @@ public class TelegramHandler extends TelegramLongPollingBot {
     /**
      * sends a message
      *
-     * @param chat chatid, ie where to send
-     * @param text what to send
+     * @param msg Message. Contains ChatID (where to send) and msg (what to send)
      */
-    private void sendMessage(Message msg) {
+    void sendMessage(Message msg) {
         SendMessage message = new SendMessage()
                 .setChatId(msg.getID())
                 .setText(msg.getText());
@@ -160,21 +129,19 @@ public class TelegramHandler extends TelegramLongPollingBot {
             System.err.println(e);
         }
     }
-    
-     private void sendLogMessage(Message msg) {
+
+    private void sendLogMessage(Message msg) {
         DateFormat dateFormat = new SimpleDateFormat("kk:mm");
         Date date = new Date();
 
         //format: [00:02] <Jenny> Hello world
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        sb.append(dateFormat.format(date));
-        sb.append("]");
-        sb.append(" <");
-        sb.append(msg.getID());
-        sb.append("> ");
-        sb.append(msg.getText());
-        System.out.println(sb.toString());
+        System.out.println("[" +
+                dateFormat.format(date) +
+                "]" +
+                " <" +
+                msg.getID() +
+                "> " +
+                msg.getText());
     }
 
 
@@ -184,9 +151,9 @@ public class TelegramHandler extends TelegramLongPollingBot {
             addObserver(lm);
         }
 
-        private void notify(TelegramMessage tm, String... args) {
+        private void notify(TelegramMessage tm) {
             setChanged();
-            notifyObservers(new Object[]{tm, args});
+            notifyObservers(tm);
         }
     }
 }

@@ -16,14 +16,16 @@
  */
 package lamesauce;
 
+import lamesauce.message.Message;
+import lamesauce.message.TelegramMessage;
 import lamesauce.user.User;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
 /**
- *
  * @author paul
  */
 public class Lamesauce implements Observer {
@@ -37,19 +39,60 @@ public class Lamesauce implements Observer {
 
     }
 
+    private void authUser(TelegramMessage tm) {
+
+    }
+
+    private void deauthUser(TelegramMessage tm) {
+
+    }
+
+    private void bringBeer(TelegramMessage tm) {
+        if (command.length == 1) {
+            bringBeer(chat, 1);
+        } else if (isNumeric(command[1].trim())
+                && ((Integer.parseInt(command[1].trim())) > 0)
+                && ((Integer.parseInt(command[1].trim())) < 4096)) {
+            bringBeer(chat, Integer.parseInt(command[1].trim()));
+        } else if (!isNumeric(command[1].trim())
+                || ((Integer.parseInt(command[1].trim())) <= 0)
+                || ((Integer.parseInt(command[1].trim())) > 4096)) {
+            sendMessage(chat, "YOU DUCKFACE.");
+        }
+    }
+
+    private void addQuote(TelegramMessage tm) {
+
+    }
+
+    private void alive() {
+
+        sendMessage(chat, "Thank you for asking " + userFirstName
+                + ". Yes, I'm alive and well.");
+    }
+
+    private StringBuilder goodMorning(TelegramMessage tm) {
+        return (new StringBuilder()).append("Hello")
+                .append(tm.getFirstName())
+                .append(Character.toChars(128520))
+                .append(",\nThanks for your question and I'm feeling glad that ")
+                .append("I'm beeing able to answer your unique request:\n\n");
+    }
+
+
     /**
      * lists all admins in chat
      *
-     * @param chat for response
+     * @param tm TelegramMessage for response
      */
-    private void listAdmins(long chat) {
+    private void listAdmins(TelegramMessage tm) {
+        StringBuilder sb = new StringBuilder(goodMorning(tm))
+                .append("The following users are authorized:\n");
+        user.stream()
+                .filter(User::isAuthed)
+                .forEach(s -> sb.append(s.getUsername()).append("\n"));
 
-        StringBuilder sb = new StringBuilder();
-        for (String i : user.getAuthedUsers()) {
-            sb.append(i);
-            sb.append(" \n");
-        }
-        sendMessage(chat, "The following users are authorized: \n" + sb.toString());
+        bot.sendMessage(new Message(tm.getID(), sb.toString()));
 
     }
 
@@ -58,24 +101,24 @@ public class Lamesauce implements Observer {
      *
      * @param chat for help
      */
-    private void helpDialog(long chat) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("The following commands are available:");
-        sb.append(" \n\n");
-        sb.append("!auth [username] - gives user rights, to add quotes without verfication");
-        sb.append(" \n\n");
+    private void helpDialog(TelegramMessage tm) {
+        StringBuilder sb = new StringBuilder(goodMorning(tm));
+        sb.append("The following commands are available:")
+                .append(" \n\n")
+                .append("!auth [username] - gives user rights, to add quotes without verfication")
+                .append(" \n\n")
 
-        sb.append("!deauth [username]- removes a users right to add quotes");
-        sb.append(" \n\n");
-        sb.append("!add [name:quote:context] - adds a quote to the hall of shame. When not authenticated, "
-                + "the quote will undergo a review process and not appear on the site");
-        sb.append(" \n\n");
-        sb.append("!whoisadmin - lists the current authenticated users");
-        sb.append(" \n\n");
-        sb.append("!bringbeer - brings a beer");
-        sb.append(" \n\n");
+                .append("!deauth [username]- removes a users right to add quotes")
+                .append(" \n\n")
+                .append("!add MoSQL@[name:quote:context] - adds a quote to the hall of shame. When not authenticated, ")
+                .append("the quote will undergo a review process and not appear on the site")
+                .append(" \n\n")
+                .append("!whoisadmin - lists the current authenticated users")
+                .append(" \n\n")
+                .append("!bringbeer {x ∈ ℕ | 0 < x < 4096} - brings a beer")
+                .append(" \n\n");
 
-        sendMessage(chat, sb.toString());
+        bot.sendMessage(new Message(tm.getID(), sb.toString()));
     }
 
     /**
@@ -104,15 +147,16 @@ public class Lamesauce implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        if (arg instanceof Object[]
-                && ((Object[]) arg).length == 3
-                && ((Object[]) arg)[0] instanceof Long
-                && ((Object[]) arg)[1] instanceof Instructions
-                && ((Object[]) arg)[2] instanceof String[]) {
-            long chat = (Long) ((Object[]) arg)[0];
-            Instructions inst = (Instructions) ((Object[]) arg)[1];
-            String[] params = (String[]) ((Object[]) arg)[2];
-            assert params.length == inst.getCountOfParameters();
+        if (arg instanceof TelegramMessage) {
+            TelegramMessage tm = (TelegramMessage) arg;
+            switch (tm.getInst()) {
+                case ADMIN:
+                    listAdmins(tm);
+                    break;
+                case HELP:
+                    helpDialog(tm);
+                    break;
+            }
         }
     }
 
@@ -121,7 +165,7 @@ public class Lamesauce implements Observer {
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        Lamesauce l = new Lamesauce();  
+        Lamesauce l = new Lamesauce();
     }
 
 }
