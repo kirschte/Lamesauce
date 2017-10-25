@@ -14,18 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package lamesauce;
+package lamesauce.user;
 
-import lamesauce.message.SendObserver;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Observable;
 
 /**
@@ -34,27 +28,12 @@ import java.util.Observable;
  */
 public class User extends Observable {
     
-    private List<SendObserver> so;
     private final String userFirstName;
     private final String username;
     
-    public User(SendObserver so, String firstName, String username) {
-        this(new ArrayList<SendObserver>(Arrays.asList(so)), firstName, username);
-    }
-    
-    public User(List<SendObserver> so, String firstName, String username) {
-        this.so = so;
-        this.so.stream().forEach(this::addObserver);
+    public User(String username, String firstName) {
         this.userFirstName = firstName;
         this.username = username;
-    }
-
-    /**
-     *
-     * @param so
-     */
-    public void addSendObserver(SendObserver so) {
-        this.so.add(so);
     }
 
     /**
@@ -111,16 +90,8 @@ public class User extends Observable {
         return userFirstName;
     }
     
-    public boolean containsChat(long chat) {
-        return so.stream().anyMatch(s -> s.getChat() == chat);
-    }
-    
     public String getUsername() {
         return username;
-    }
-    
-    public List<SendObserver> getSo() {
-        return so;
     }
 
     /**

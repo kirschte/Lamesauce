@@ -16,31 +16,26 @@
  */
 package lamesauce.message;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  *
  * @author captnmo
  */
-public class SendLogMessage implements SendMessages {
-    @Override
-    public SendMessages sendMessage(long userID, String text) {
-        DateFormat dateFormat = new SimpleDateFormat("kk:mm");
-        Date date = new Date();
+public class Message {
+    
+    private final long ID;
+    private final String text;
 
-        //format: [00:02] <Jenny> Hello world
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        sb.append(dateFormat.format(date));
-        sb.append("]");
-        sb.append(" <");
-        sb.append(userID);
-        sb.append("> ");
-        sb.append(text);
-        System.out.println(sb.toString());
-
-        return this;
+    public Message(long ID, String text) {
+        this.ID = ID;
+        this.text = text;
     }
+
+    public long getID() {
+        return ID;
+    }
+
+    public String getText() {
+        return text;
+    }
+
 }

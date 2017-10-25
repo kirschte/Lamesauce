@@ -14,10 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package lamesauce;
-
-import java.util.List;
-import lamesauce.message.SendObserver;
+package lamesauce.user;
 
 /**
  *
@@ -25,8 +22,8 @@ import lamesauce.message.SendObserver;
  */
 public class AuthedUser extends User {
 
-    public AuthedUser(List<SendObserver> so, String userFirstName, String username) {
-        super(so, userFirstName, username);
+    public AuthedUser(String userFirstName, String username) {
+        super(userFirstName, username);
     }
 
     @Override
@@ -34,7 +31,7 @@ public class AuthedUser extends User {
         setChanged();
         notifyObservers("User " + user.getUserFirstName()
                 + " has been authorized for changes!");
-        return new AuthedUser(user.getSo(), user.getUserFirstName(), user.getUsername());
+        return new AuthedUser(user.getUserFirstName(), user.getUsername());
     }
 
     @Override
@@ -42,7 +39,7 @@ public class AuthedUser extends User {
         setChanged();
         if (user instanceof AuthedUser) {
             notifyObservers("User " + user.getUserFirstName() + " has been deauthorized!");
-            return new User(user.getSo(), user.getUserFirstName(), user.getUsername());
+            return new User(user.getUserFirstName(), user.getUsername());
         } else {
             notifyObservers("User is not authorized!");
             return user;

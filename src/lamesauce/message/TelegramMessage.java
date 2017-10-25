@@ -16,13 +16,39 @@
  */
 package lamesauce.message;
 
+import lamesauce.Instructions;
 
 /**
  *
  * @author captnmo
  */
-public interface SendMessages {
+public class TelegramMessage extends Message {
+    
+    private final String username; //Absender
+    private final String firstName; //Absender
+    private final Instructions inst;
+    
+    public TelegramMessage(long ID, String text, String username, String firstName, Instructions inst) {
+        super(ID, text);
+        this.username = username;
+        this.firstName = firstName;
+        this.inst = inst;
+    }
 
-    public SendMessages sendMessage(long chat, String text);
+    public Instructions getInst() {
+        return inst;
+    }
+    
+    
 
+    public String getUsername() {
+        return username;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+    
+    
+    
 }

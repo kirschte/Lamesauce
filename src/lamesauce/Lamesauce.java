@@ -16,116 +16,25 @@
  */
 package lamesauce;
 
+import lamesauce.user.User;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import lamesauce.message.SendObserver;
-import lamesauce.message.SendTelegramMessage;
-import org.telegram.telegrambots.api.objects.Update;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  *
  * @author paul
  */
-public class Lamesauce extends SendTelegramMessage {
-
-    private final String BOT_TOKEN = "LamesauceAPI";
-    private final String BOT_USERNAME = "Lamesauce";
-
-    public final List<Long> SQUAD
-            = new ArrayList<>(Arrays.asList(-135634788L)); //the telegram Chat ID
-    private List<SendObserver> so; //same lenth as SQUAD
+public class Lamesauce implements Observer {
 
     private List<User> user;
+    private TelegramHandler bot;
 
     public Lamesauce() {
-        this.so = SQUAD.stream()
-                .map(SendObserver::new)
-                .collect(Collectors.toList());
         this.user = LoadStoreArchitecture.loadFromFile();
+        this.bot = new TelegramHandler(this);
 
-    }
-
-    @Override
-    public String getBotToken() {
-        return BOT_TOKEN;
-    }
-
-    /**
-     * where the real shit happens
-     *
-     * @param update
-     */
-    @Override
-    public void onUpdateReceived(Update update) {
-        //real shit happes here
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            //extract data
-            long userID = update.getMessage().getFrom().getId();
-
-            String username = update.getMessage().getFrom().getUserName();
-            String userFirstName = update.getMessage().getFrom().getFirstName();
-            String messageRecieved = update.getMessage().getText();
-            long chat = update.getMessage().getChatId();
-            Optional<SendObserver> chatFirst = so.stream()
-                    .filter(s -> s.getChat() == chat)
-                    .findFirst();
-            if (!chatFirst.isPresent()) {
-                so.add(new SendObserver(chat, false));
-            }
-
-            if (!(messageRecieved.trim().isEmpty())) {
-                String[] command = messageRecieved.split(" ", 2);
-                //houston, we have a message
-
-                switch (command[0]) {
-                    case "!add":
-                        addQuote(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!auth":
-                        authUser(chat, username, userFirstName, command[1]);
-                        break;
-
-                    case "!areyoualive":
-                        sendMessage(chat, "Thank you for asking " + userFirstName
-                                + ". Yes, I'm alive and well.");
-
-                        break;
-                    case "!whoisadmin":
-                        listAdmins(chat);
-                        break;
-
-                    case "!deauth":
-                        deauthUser(chat, username, command[1]);
-                        break;
-                    case "!help":
-                        helpDialog(chat);
-                        break;
-                    case "!bringbeer":
-                        if (command.length == 1) {
-                            bringBeer(chat, 1);
-                        } else if (isNumeric(command[1].trim())
-                                && ((Integer.parseInt(command[1].trim())) > 0)
-                                && ((Integer.parseInt(command[1].trim())) < 4096)) {
-                            bringBeer(chat, Integer.parseInt(command[1].trim()));
-                        } else if (!isNumeric(command[1].trim())
-                                || ((Integer.parseInt(command[1].trim())) <= 0)
-                                || ((Integer.parseInt(command[1].trim())) > 4096)) {
-                            sendMessage(chat, "YOU DUCKFACE.");
-                        }
-                }
-            }
-
-        }
-    }
-
-    @Override
-    public String getBotUsername() {
-        return BOT_USERNAME;
     }
 
     /**
@@ -192,26 +101,27 @@ public class Lamesauce extends SendTelegramMessage {
     private static boolean isNumeric(String number) {
         return number.matches("\\d+");
     }
-    
+
+    @Override
+    public void update(Observable o, Object arg) {
+        if (arg instanceof Object[]
+                && ((Object[]) arg).length == 3
+                && ((Object[]) arg)[0] instanceof Long
+                && ((Object[]) arg)[1] instanceof Instructions
+                && ((Object[]) arg)[2] instanceof String[]) {
+            long chat = (Long) ((Object[]) arg)[0];
+            Instructions inst = (Instructions) ((Object[]) arg)[1];
+            String[] params = (String[]) ((Object[]) arg)[2];
+            assert params.length == inst.getCountOfParameters();
+        }
+    }
+
     /**
      * @param args the command line arguments
      * @throws java.io.IOException
      */
     public static void main(String[] args) throws IOException {
-        ApiContextInitializer.init();
-
-        TelegramBotsApi botsApi = new TelegramBotsApi();
-        User user = new User();
-        try {
-            botsApi.registerBot(new Lamesauce());
-            //System.out.println("Bot successfully started");
-            //System.out.println("...with the following authorized users:");
-            //for (String i : user.getAuthedUsers()) {
-            //    System.out.print(i + ", ");
-            //}
-            //System.out.println("");
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        Lamesauce l = new Lamesauce();  
     }
+
 }
