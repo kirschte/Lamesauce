@@ -14,14 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package lamesauce;
+package lamesauce.updateAppl;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import lamesauce.message.*;
+import lamesauce.tasks.Instructions;
+import lamesauce.Lamesauce;
+import lamesauce.tasks.*;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -34,20 +36,24 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  */
 public class TelegramHandler extends TelegramLongPollingBot {
 
-    private final String BOT_TOKEN = "LamesauceAPI";
-    private final String BOT_USERNAME = "Lamesauce";
+    private final String BOT_TOKEN = "450391506:AAHQnvWolEvu7iHv-TTy8tu39-rv0you_68";
+    private final String BOT_USERNAME = "Lamesauce2_bot";
 
-    private final List<Long> SQUAD
+    private final List<Long> SQUAD //for logging purpose only
             = new ArrayList<>(Collections.singletonList(-135634788L)); //the telegram Chat ID
     private Helper hlp;
 
-    TelegramHandler(Lamesauce lm) {
-        this.hlp = new Helper(lm);
-
+    /**
+     * initialize. Only needed for BOT (have to be static)
+     *
+     * @param lm
+     */
+    public static TelegramHandler initTelegramHandler(Lamesauce lm) {
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
+        TelegramHandler th = new TelegramHandler(lm);
         try {
-            botsApi.registerBot(this);
+            botsApi.registerBot(th);
             //System.out.println("Bot successfully started");
             //System.out.println("...with the following authorized users:");
             //for (String i : user.getAuthedUsers()) {
@@ -57,6 +63,11 @@ public class TelegramHandler extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             System.err.println(e);
         }
+        return th;
+    }
+
+    private TelegramHandler(Lamesauce lm) {
+        this.hlp = new Helper(lm);
     }
 
     @Override
@@ -86,27 +97,34 @@ public class TelegramHandler extends TelegramLongPollingBot {
 
             if (!(messageRecieved.trim().isEmpty())) {
                 identify(chat, username, userFirstName, messageRecieved);
-                //houston, we have a message
+                //houston, we have a tasks
             }
 
         }
     }
 
     private void identify(long chat, String username, String userFirstName, String message) {
-        String[] words = message.trim().split("\\s+"); //any whitespace character
-        List<String> droppedWords = Arrays.stream(words)
-                .dropWhile(s -> Instructions.getIdentifiers().stream().anyMatch(s::contains))
-                .collect(Collectors.toList());
-        Optional<Instructions> inst = Instructions.containsIdent(droppedWords.remove(0));
-        //else: a non-valid identifier --> nothing should happen
-        inst.ifPresent(instructions -> hlp.notify(
-                new TelegramMessage(
-                        chat,
-                        Arrays.toString(droppedWords.toArray(new String[droppedWords.size()])),
-                        username,
-                        userFirstName,
-                        instructions)
-        ));
+        boolean foo = Instructions.getIdentifiers().stream().anyMatch("!hel"::contains);
+        List<String> droppedWords =
+                Arrays.stream(message.trim().split("\\s+"))
+                        .dropWhile(s -> !Instructions.getIdentifiers().stream().anyMatch(s::contains))
+                        .collect(Collectors.toList());
+        assert droppedWords.size() > 0; //per definition. Empty message are filtered out previously
+        String removed = droppedWords.remove(0);
+
+        StringBuilder words = new StringBuilder();
+        droppedWords.forEach(words::append);
+
+        Instructions.containsIdent(removed)
+                .ifPresent(instructions -> hlp.notify(
+                        new TelegramMessage(
+                                chat,
+                                removed.replace(instructions.getIdentifier(), "")
+                                        + words.toString(),
+                                username,
+                                userFirstName,
+                                instructions)
+                )); //else: a non-valid identifier --> nothing should happen
     }
 
     @Override
@@ -115,11 +133,12 @@ public class TelegramHandler extends TelegramLongPollingBot {
     }
 
     /**
-     * sends a message
+     * sends a tasks
      *
      * @param msg Message. Contains ChatID (where to send) and msg (what to send)
      */
-    void sendMessage(Message msg) {
+    @SuppressWarnings("deprecation")
+    public void sendMessage(Message msg) {
         SendMessage message = new SendMessage()
                 .setChatId(msg.getID())
                 .setText(msg.getText());
@@ -144,7 +163,7 @@ public class TelegramHandler extends TelegramLongPollingBot {
                 msg.getText());
     }
 
-
+    @SuppressWarnings("deprecation")
     private class Helper extends Observable {
 
         private Helper(Lamesauce lm) {

@@ -18,6 +18,7 @@ package lamesauce;
 
 import lamesauce.user.AuthedUser;
 import lamesauce.user.User;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,6 +31,8 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 /**
+ * /<Storage/> ::= /<authed/>;/<username/>;/<userFirstName/>
+ * /<authed/> = 0 | 1 //=> 0 eq not-authed; 1 eq authed
  *
  * @author captnmo
  */
@@ -38,32 +41,23 @@ public class LoadStoreArchitecture {
     public static List<User> loadFromFile() {
         String savedUsers = null;
         try {
-            savedUsers = new String(Files.readAllBytes(Paths.get("/binaries/authedUsers.txt")));
+            savedUsers = new String(Files.readAllBytes(Paths.get("binaries/authedUsers.txt")));
         } catch (IOException ex) {
             System.err.println(ex);
         }
-        List<String> savedUsersList = savedUsers == null
-                ? new ArrayList<>()
-                : Arrays.asList(savedUsers.split("\\r?\\n"));
-        Map<Boolean, List<String[]>> collect = savedUsersList.stream()
-                .map(name -> name.split(";"))
-                .collect(Collectors.partitioningBy(i -> "1".equals(i[1])));
-        List<User> users = collect.entrySet().stream()
-                .filter(Entry::getKey)
-                .map((entry) -> entry.getValue().get(0))
-                .map(all -> new AuthedUser(
-                (List<SendObserver>) new SendObserver(Long.parseLong(all[2])),
-                all[3],
-                all[0])).collect(Collectors.toList());
-        users.addAll((Collection<? extends User>) collect.entrySet().stream()
-                .filter(entry -> !entry.getKey())
-                .map((entry) -> entry.getValue().get(0))
-                .map(all -> new User(
-                        (List<SendObserver>) new SendObserver(Long.parseLong(all[2])),
-                        all[3],
-                        all[0])));
 
-        return users;
+        return savedUsers == null ?
+                new ArrayList<>() :
+                Arrays.stream(savedUsers.split("\\r?\\n"))
+                        .map(line -> line.split(";"))
+                        .filter(line -> line.length == 3
+                                && line[0].trim().matches("[0|1]")
+                                && line[1].trim().length() > 0
+                                && line[2].trim().length() > 0)
+                        .map(line -> "1".equals(line[0].trim()) ?
+                                new AuthedUser(line[2].trim(), line[1].trim()) :
+                                new User(line[2].trim(), line[1].trim())
+                        ).collect(Collectors.toList());
     }
 
     public static void saveToFile(List<User> l) {

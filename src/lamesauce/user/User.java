@@ -20,86 +20,104 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Observable;
 
 /**
- *
  * @author captnmo
  */
-public class User extends Observable {
-    
+public class User {
+
     private final String userFirstName;
     private final String username;
-    
+
     public User(String username, String firstName) {
-        this.userFirstName = firstName;
         this.username = username;
+        this.userFirstName = firstName;
     }
 
     /**
-     * authorizes a username for changes
+     * authorizes a username for changes, if this is authenticated
      *
-     * @param user user which is authorized
-     * @return
+     * @param user user to authorize
+     * @return either an authorized user or the same user
      */
-    public User auth(User user) {
-        setChanged();
-        notifyObservers("I'm sorry " + userFirstName
-                + ", I'm afraid I can't let you do that");
-        return user;
+    public ValueAndOutput<User, String> auth(User user) {
+        return new ValueAndOutput<>(
+                user
+                , "I'm sorry " + userFirstName
+                + ", I'm afraid I can't let you do that"
+        );
     }
-    
-    public User deauth(User user) {
-        setChanged();
-        notifyObservers("I really hope that you're not trying to deauthorize someone when you're not allowed to!");
-        return user;
+
+    /**
+     * does nothing, but returning this in ValueAndOutput-Format
+     * @return this and empty String in ValueAndOutput-Format
+     */
+    public final ValueAndOutput<User, String> nothing() {
+        return new ValueAndOutput<>(
+                this
+                , ""
+        );
+    }
+
+    /**
+     * deauthorizes a username for changes, if this and user are authenticated
+     *
+     * @param user user to deauthorize
+     * @return either an deauthorized user or the same user
+     */
+    public ValueAndOutput<User,String> deauth(User user) {
+        return new ValueAndOutput<>(
+                user
+                , "I really hope that you're not trying to deauthorize someone"
+                + " when you're not allowed to!"
+        );
     }
 
     /**
      * adds a quote to the hall of shame
      *
-     * @param chat where to send notification
-     * @param user username to check for auth
-     * @param userFirstName users first name for the reply
-     * @param quote text for the site (already formated)
+     * @param text the quote
      */
-    public void addQuote(long chat, String user, String userFirstName, String quote) {
-        setChanged();
-        notifyObservers(new Object[]{
-            chat, "I'm sorry " + userFirstName
-            + ", I'm afraid I can't let you do that."
-            + " However, I've added it to the "
-            + "list for future approval."});
-        addSH("#", quote);
+    public String addQuote(String text) {
+        addSH("#", text);
+        return "I'm sorry " + getUserFirstName()
+                + ", I'm afraid I can't let you do that."
+                + " However, I've added it to the "
+                + "list for future approval.";
     }
-    
-    protected final void addSH(String prefix, String quote) {
+
+    final void addSH(String prefix, String quote) {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM");
-        Date date = new Date();
         try {
             Process p = new ProcessBuilder("/binaries/add.sh", prefix
-                    + dateFormat.format(date) + ":"
+                    + dateFormat.format(new Date()) + ":"
                     + quote).start();
-            
+
         } catch (IOException ex) {
             System.err.println("Can't find ADD.SH");
         }
     }
-    
-    public String getUserFirstName() {
+
+    final String getUserFirstName() {
         return userFirstName;
     }
-    
-    public String getUsername() {
+
+    /**
+     * gets the username
+     *
+     * @return username
+     */
+    public final String getUsername() {
         return username;
     }
 
     /**
+     * get authed status
      *
-     * @return
+     * @return true if authenticated, otherwise false
      */
     public boolean isAuthed() {
         return false;
     }
-  
+
 }

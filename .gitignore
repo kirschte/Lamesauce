@@ -3,3 +3,6 @@
 /nbproject/private/
 /build/
 /dist/
+.idea/dictionaries/
+.idea/uiDesigner.xml
+/out/

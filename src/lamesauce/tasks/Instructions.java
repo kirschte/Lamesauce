@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package lamesauce;
+package lamesauce.tasks;
 
 
 import java.util.Arrays;
@@ -37,7 +37,7 @@ public enum Instructions {
 
     private String identifier;
     
-    private Instructions(String identifier) {
+    Instructions(String identifier) {
         this.identifier = identifier;
     }
 

@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Lamesauce:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Lamesauce_jar</output-path>
+    <root id="archive" name="Lamesauce.jar">
+      <element id="module-output" name="Lamesauce" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/telegrambots-3.4-jar-with-dependencies.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

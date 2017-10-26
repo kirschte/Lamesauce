@@ -16,48 +16,47 @@
  */
 package lamesauce.user;
 
+
 /**
- *
  * @author captnmo
  */
 public class AuthedUser extends User {
 
-    public AuthedUser(String userFirstName, String username) {
-        super(userFirstName, username);
+    public AuthedUser(String username, String userFirstName) {
+        super(username, userFirstName);
     }
 
     @Override
-    public User auth(User user) {
-        setChanged();
-        notifyObservers("User " + user.getUserFirstName()
-                + " has been authorized for changes!");
-        return new AuthedUser(user.getUserFirstName(), user.getUsername());
+    public ValueAndOutput<User, String> auth(User user) {
+        return new ValueAndOutput<>(new AuthedUser(
+                user.getUsername(), user.getUserFirstName())
+                , "User " + user.getUserFirstName()
+                + " has been authorized for changes!"
+        );
     }
 
     @Override
-    public User deauth(User user) {
-        setChanged();
-        if (user instanceof AuthedUser) {
-            notifyObservers("User " + user.getUserFirstName() + " has been deauthorized!");
-            return new User(user.getUserFirstName(), user.getUsername());
-        } else {
-            notifyObservers("User is not authorized!");
-            return user;
-        }
+    public ValueAndOutput<User, String> deauth(User user) {
+        return user.isAuthed() ?
+                new ValueAndOutput<>(
+                        new User(user.getUsername(), user.getUserFirstName())
+                        , "User " + user.getUserFirstName() + " has been deauthorized!"
+                ) :
+                new ValueAndOutput<>(
+                        user
+                        , "User " + user.getUserFirstName() + " is not authorized!"
+                );
     }
-    
+
     @Override
     public boolean isAuthed() {
         return true;
     }
 
     @Override
-    public void addQuote(long chat, String user, String userFirstName, String quote) {
-        setChanged();
-        notifyObservers(new Object[]{
-            chat,
-            "Adding message to the hall of shame >:)"});
+    public String addQuote(String quote) {
         addSH("", quote);
+        return "Adding tasks to the hall of shame >:)";
     }
 
 }

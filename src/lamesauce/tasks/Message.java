@@ -14,41 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package lamesauce.message;
-
-import lamesauce.Instructions;
+package lamesauce.tasks;
 
 /**
  *
  * @author captnmo
  */
-public class TelegramMessage extends Message {
+public class Message {
     
-    private final String username; //Absender
-    private final String firstName; //Absender
-    private final Instructions inst;
-    
-    public TelegramMessage(long ID, String text, String username, String firstName, Instructions inst) {
-        super(ID, text);
-        this.username = username;
-        this.firstName = firstName;
-        this.inst = inst;
+    private final long ID;
+    private final String text;
+
+    public Message(long ID, String text) {
+        this.ID = ID;
+        this.text = text;
     }
 
-    public Instructions getInst() {
-        return inst;
-    }
-    
-    
-
-    public String getUsername() {
-        return username;
+    public final long getID() {
+        return ID;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public final String getText() {
+        return text;
     }
-    
-    
-    
+
 }
