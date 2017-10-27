@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * /<Storage/> ::= /<authed/>;/<username/>;/<userFirstName/>
- * /<authed/> = 0 | 1 //=> 0 eq not-authed; 1 eq authed
+ * /<authed/> ::= 0 | 1 //=> 0 eq not-authed; 1 eq authed
  *
  * @author captnmo
  */
