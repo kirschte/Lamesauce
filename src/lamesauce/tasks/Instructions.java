@@ -17,6 +17,7 @@
 package lamesauce.tasks;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,10 @@ public enum Instructions {
         return Arrays.stream(Instructions.values())
                 .filter(i -> i.getIdentifier().equals(identifier))
                 .findFirst();
+    }
+
+    public static List<Instructions> changesUserData() {
+        return Arrays.asList(ADD, AUTH, DEAUTH);
     }
     
 }

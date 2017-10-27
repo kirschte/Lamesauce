@@ -3,7 +3,7 @@
 # CMS-System or do what ever you want with the quotes…
 
 if [ "$1" ]; then
-    echo "parameter: $1"
+    echo "parameter: $1" >> quotes.txt
     # do something, e.g. adding your quote
 else
     echo "Error: Missing parameter" 1>&2

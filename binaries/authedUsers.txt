@@ -1,2 +1,2 @@
-ExampleUser1
-MaxMusterfrau
+0;username1;Franz
+1;username2;Ferdinand

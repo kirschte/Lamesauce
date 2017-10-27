@@ -139,13 +139,15 @@ public class TelegramHandler extends TelegramLongPollingBot {
      */
     @SuppressWarnings("deprecation")
     public void sendMessage(Message msg) {
-        SendMessage message = new SendMessage()
-                .setChatId(msg.getID())
-                .setText(msg.getText());
-        try {
-            sendMessage(message);
-        } catch (TelegramApiException e) {
-            System.err.println(e);
+        if (!msg.getText().isEmpty()) {
+            SendMessage message = new SendMessage()
+                    .setChatId(msg.getID())
+                    .setText(msg.getText());
+            try {
+                sendMessage(message);
+            } catch (TelegramApiException e) {
+                System.err.println(e);
+            }
         }
     }
 

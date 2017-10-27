@@ -16,6 +16,7 @@
  */
 package lamesauce;
 
+import lamesauce.tasks.Instructions;
 import lamesauce.tasks.Message;
 import lamesauce.updateAppl.TelegramMessage;
 import lamesauce.updateAppl.TelegramHandler;
@@ -78,7 +79,11 @@ public class Lamesauce implements Observer {
                                 .peek(s -> bot.sendMessage(new Message(tm.getID(), s.getOutput())))
                                 .map(ValueAndOutput::getValue)
                                 .collect(Collectors.toList())
-                        , () -> user.add(new User(tm.getUsername(), tm.getFirstName())));
+                        , () -> {
+                            User newUser = new User(tm.getUsername(), tm.getFirstName());
+                            user.add(newUser);
+                            authUser(tm);
+                        });
     }
 
     /**
@@ -95,7 +100,11 @@ public class Lamesauce implements Observer {
                                 .peek(s -> bot.sendMessage(new Message(tm.getID(), s.getOutput())))
                                 .map(ValueAndOutput::getValue)
                                 .collect(Collectors.toList())
-                        , () -> user.add(new User(tm.getUsername(), tm.getFirstName())));
+                        , () -> {
+                            User newUser = new User(tm.getUsername(), tm.getFirstName());
+                            user.add(newUser);
+                            authUser(tm);
+                        });
     }
 
     /**
@@ -138,8 +147,16 @@ public class Lamesauce implements Observer {
     private void addQuote(TelegramMessage tm) {
         if (invMoSQL(tm.getText())) {
             getUserFromName(tm.getUsername())
-                    .ifPresentOrElse(u -> u.addQuote(tm.getText())
-                            , () -> user.add(new User(tm.getUsername(), tm.getFirstName())));
+                    .ifPresentOrElse(u -> bot.sendMessage(
+                            new Message(
+                                    tm.getID(),
+                                    u.addQuote(tm.getText())
+                            ))
+                            , () -> {
+                                User newUser = new User(tm.getUsername(), tm.getFirstName());
+                                user.add(newUser);
+                                addQuote(tm);
+                            });
         } else {
             bot.sendMessage(new Message(
                     tm.getID()
@@ -173,13 +190,18 @@ public class Lamesauce implements Observer {
      * @param tm TelegramMessage for response
      */
     private void listAdmins(TelegramMessage tm) {
-        StringBuilder sb = new StringBuilder(goodMorning(tm))
-                .append("The following users are authorized:\n");
+        StringBuilder sb = new StringBuilder();
         user.stream()
                 .filter(User::isAuthed)
                 .forEach(s -> sb.append(s.getUsername()).append("\n"));
+        bot.sendMessage(
+                new Message(
+                        tm.getID(),
+                        goodMorning(tm) + (sb.toString().isEmpty() ?
+                                "There is no user authorized!" :
+                                "The following users are authorized:\n")
+                                + sb.toString()));
 
-        bot.sendMessage(new Message(tm.getID(), sb.toString()));
 
     }
 
@@ -232,6 +254,9 @@ public class Lamesauce implements Observer {
                     break;
                 case ADD:
                     addQuote(tm);
+            }
+            if (Instructions.changesUserData().contains(tm.getInst())) {
+                LoadStoreArchitecture.saveToFile(user);
             }
         }
     }

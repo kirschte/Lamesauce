@@ -50,6 +50,7 @@ public class User {
 
     /**
      * does nothing, but returning this in ValueAndOutput-Format
+     *
      * @return this and empty String in ValueAndOutput-Format
      */
     public final ValueAndOutput<User, String> nothing() {
@@ -65,7 +66,7 @@ public class User {
      * @param user user to deauthorize
      * @return either an deauthorized user or the same user
      */
-    public ValueAndOutput<User,String> deauth(User user) {
+    public ValueAndOutput<User, String> deauth(User user) {
         return new ValueAndOutput<>(
                 user
                 , "I really hope that you're not trying to deauthorize someone"
@@ -89,7 +90,7 @@ public class User {
     final void addSH(String prefix, String quote) {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM");
         try {
-            Process p = new ProcessBuilder("/binaries/add.sh", prefix
+            Process p = new ProcessBuilder("binaries/add.sh", prefix
                     + dateFormat.format(new Date()) + ":"
                     + quote).start();
 
@@ -120,4 +121,26 @@ public class User {
         return false;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+
+        User user = (User) o;
+
+        return (userFirstName != null ? userFirstName.equals(user.userFirstName) : user.userFirstName == null)
+                && (username != null ? username.equals(user.username) : user.username == null);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = userFirstName != null ? userFirstName.hashCode() : 0;
+        result = 31 * result + (username != null ? username.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "0;" + getUserFirstName() + ";" + getUsername();
+    }
 }

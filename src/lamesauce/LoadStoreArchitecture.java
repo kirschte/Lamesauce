@@ -21,13 +21,11 @@ import lamesauce.user.User;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 /**
@@ -38,12 +36,14 @@ import java.util.stream.Collectors;
  */
 public class LoadStoreArchitecture {
 
-    public static List<User> loadFromFile() {
+    private static final Path path = Paths.get("binaries/authedUsers.txt");
+
+    static List<User> loadFromFile() {
         String savedUsers = null;
         try {
-            savedUsers = new String(Files.readAllBytes(Paths.get("binaries/authedUsers.txt")));
-        } catch (IOException ex) {
-            System.err.println(ex);
+            savedUsers = new String(Files.readAllBytes(path));
+        } catch (IOException e) {
+            System.err.println(e);
         }
 
         return savedUsers == null ?
@@ -60,7 +60,12 @@ public class LoadStoreArchitecture {
                         ).collect(Collectors.toList());
     }
 
-    public static void saveToFile(List<User> l) {
-        System.err.println("Undefined");
+
+    static void saveToFile(List<User> user) {
+        try {
+            Files.write(path, user.stream().map(User::toString).collect(Collectors.toList()));
+        } catch (IOException e) {
+            System.err.println(e);
+        }
     }
 }

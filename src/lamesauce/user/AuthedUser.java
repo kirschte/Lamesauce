@@ -28,20 +28,30 @@ public class AuthedUser extends User {
 
     @Override
     public ValueAndOutput<User, String> auth(User user) {
-        return new ValueAndOutput<>(new AuthedUser(
-                user.getUsername(), user.getUserFirstName())
-                , "User " + user.getUserFirstName()
-                + " has been authorized for changes!"
-        );
+        return user.isAuthed() ?
+                new ValueAndOutput<>(
+                        user
+                        , "User " + user.getUserFirstName() + " ist already authorized, cunt!"
+                ) :
+                new ValueAndOutput<>(
+                        new AuthedUser(user.getUsername(), user.getUserFirstName())
+                        , "User " + user.getUserFirstName()
+                        + " has been authorized for changes!"
+                );
     }
 
     @Override
     public ValueAndOutput<User, String> deauth(User user) {
         return user.isAuthed() ?
-                new ValueAndOutput<>(
-                        new User(user.getUsername(), user.getUserFirstName())
-                        , "User " + user.getUserFirstName() + " has been deauthorized!"
-                ) :
+                this.equals(user) ?
+                        new ValueAndOutput<>(
+                                user
+                                , "User " + user.getUserFirstName() + " can't deauthorize himself!"
+                        ) :
+                        new ValueAndOutput<>(
+                                new User(user.getUsername(), user.getUserFirstName())
+                                , "User " + user.getUserFirstName() + " has been deauthorized!"
+                        ) :
                 new ValueAndOutput<>(
                         user
                         , "User " + user.getUserFirstName() + " is not authorized!"
@@ -57,6 +67,11 @@ public class AuthedUser extends User {
     public String addQuote(String quote) {
         addSH("", quote);
         return "Adding tasks to the hall of shame >:)";
+    }
+
+    @Override
+    public String toString() {
+        return "1;" + getUserFirstName() + ";" + getUsername();
     }
 
 }
