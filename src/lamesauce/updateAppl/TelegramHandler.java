@@ -36,7 +36,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  */
 public class TelegramHandler extends TelegramLongPollingBot {
 
-    private final String BOT_TOKEN = "450391506:AAHQnvWolEvu7iHv-TTy8tu39-rv0you_68";
+    private final String BOT_TOKEN = "";
     private final String BOT_USERNAME = "Lamesauce2_bot";
 
     private final List<Long> SQUAD //for logging purpose only
